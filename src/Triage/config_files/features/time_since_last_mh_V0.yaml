@@ -1,0 +1,23 @@
+prefix: 'time_since_last_mh'
+from_obj: 'feature_time_since_last_mh'
+knowledge_date_column: 'knowledge_date'
+
+aggregates_imputation:
+  all:
+    type: 'constant'
+    value: 0
+
+aggregates:
+  - quantity: 
+      prior: '*'
+    metrics:
+      - 'count'
+      - 'min'
+      - 'max'
+      - 'avg'
+      - 'last'
+
+intervals:
+  - '1 year'
+  - '3 years'
+  - 'all'

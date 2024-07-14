@@ -1,0 +1,4 @@
+config_version: 'v8'
+
+model_comment: 'dev-config'
+random_seed: 23895478

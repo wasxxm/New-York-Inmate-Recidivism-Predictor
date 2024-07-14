@@ -1,0 +1,156 @@
+config_version: 'v8'
+
+model_comment: 'dev-config'
+random_seed: 23895478
+
+# TIME SPLITTING
+# The time window to look at, and how to divide the window into
+# train/test splits
+temporal_config:
+  
+  feature_start_time: '2000-01-01' # earliest date included in features
+  feature_end_time: '2019-01-01'   # latest date included in features
+
+  #First date label data is good
+  label_start_time: '2014-01-01' # earliest date for which labels are available
+  label_end_time: '2019-01-01' # day AFTER last label date (all dates in any model are < this date)
+
+  #How often to update model?
+  model_update_frequency: '18month' # Monthly because that's how often they make mental health services plan
+
+  #Length of time defining a test set
+  test_durations: ['0day'] # length of time included in a test matrix (0 days will give a single prediction immediately after training end)
+  
+  #How far back a training set reaches?
+  max_training_histories: ['5year'] # length of time included in a train matrix
+
+  #How often do you sample for training/testing datasets?
+  training_as_of_date_frequencies: ['18month'] # time between as of dates for same entity in train matrix
+  test_as_of_date_frequencies: ['18month'] # time between as of dates for same entity in test matrix
+
+  training_label_timespans: ['6month']
+  test_label_timespans: ['6month']
+
+
+
+
+
+
+# COHORT & LABEL GENERATION
+# Labels are configured with a query with placeholders for the 'as_of_date' and 'label_timespan'. You can include a local path to a sql file containing the label query to the 'filepath' key (preferred) or include the query in the 'query' key
+#
+# The query must return two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
+# The as_of_date and label_timespan must be represented by placeholders marked by curly brackets.
+#
+# In addition to these configuration options, you can pass a name to apply to the label configuration
+# that will be present in matrix metadata for each matrix created by this experiment,
+# under the 'label_name' key. The default label_name is 'outcome'.
+label_config:
+  #filepath: 'sql/labels_test.sql'
+  #filepath: 'sql/labels.sql'
+  filepath: 'sql/labels/assignment_3_labels.sql'
+  name: 'labels'
+
+
+# FEATURE GENERATION
+# The aggregate features to generate for each train/test split
+feature_aggregations:
+  -
+    # prefix given to the resultant tables
+    prefix: 'bkgs'
+    # from_obj is usually a source table but can be an expression, such as
+    # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
+    from_obj: |
+      (SELECT c.joid::INT AS entity_id,
+             i.booking_date AS knowledge_date,
+             age
+      FROM cleaned.jocojimsinmatedata i
+      JOIN raw.jocojococlient c
+          ON c.source = 'jocoJIMSNameIndex.MNI_NO_0'
+          AND c.sourceid::INT = i.mni_no::INT) AS bookings
+    knowledge_date_column: 'knowledge_date'
+
+    # top-level imputation rules that will apply to all aggregates functions
+    # can also specify categoricals_imputation or array_categoricals_imputation
+    aggregates_imputation:
+      all:
+        type: 'constant'
+        value: 0
+
+    # Aggregates of numerical columns. Each quantity is a number of some
+    # sort, and the list of metrics are applied to each quantity
+    aggregates:
+      -
+        quantity: 
+          prior: '*'
+        metrics:
+          - 'count'
+    # The time intervals over which to aggregate features
+    intervals:
+      - '1 year'
+      - '5 years'
+      - 'all'
+
+
+# MODEL SCORING
+# How each trained model is scored
+#
+# Each entry in 'testing_metric_groups' needs a list of one of the metrics defined in
+# catwalk.evaluation.ModelEvaluator.available_metrics (contributions welcome!)
+# Depending on the metric, either thresholds or parameters
+#
+# Parameters specify any hyperparameters needed. For most metrics,
+# which are simply wrappers of sklearn functions, these
+# are passed directly to sklearn.
+#
+# Thresholds are more specific: The list is dichotomized and only the
+# top percentile or top n entities are scored as positive labels
+
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@, recall@]
+          thresholds:
+              percentiles: [1, 2, 3, 4, 5, 6, 7, 8, 9, 
+                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
+                  30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 
+                  40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+                  50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+                  60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+                  70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+                  80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+                  90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+                  100]
+              top_n: [100, 200, 500, 1000]
+
+    training_metric_groups:
+        -
+          metrics: [precision@, recall@]
+          thresholds:
+              percentiles: [1, 2, 3, 4, 5, 6, 7, 8, 9, 
+                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
+                  30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 
+                  40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+                  50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+                  60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+                  70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+                  80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+                  90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+                  100]
+              top_n: [100, 200, 500, 1000]
+
+# INDIVIDUAL IMPORTANCES
+individual_importance:
+  methods: [] # empty list means don't calculate individual importances
+  # methods: ['uniform']
+  n_ranks: 5
+
+
+# MODEL GRID PRESETS
+# Triage now comes with a set of predefined *recommended* grids
+# named: quickstart, small, medium, large
+# See the documentation for recommended uses cases for those.
+#
+model_grid_preset: 'quickstart'

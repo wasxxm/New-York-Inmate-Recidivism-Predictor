@@ -1,0 +1,29 @@
+    # prefix given to the resultant tables
+    prefix: 'bjmhs'
+    # from_obj is usually a source table but can be an expression, such as
+    # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
+    from_obj: |
+      (SELECT joid::INT AS entity_id,
+              '{as_of_date}' as 'knowledge_date',
+              bjmhs_referred as bjmhs_in_last_5
+         FROM cleaned.jocojimsinmatedata) as bjmhs     
+    knowledge_date_column: 'knowledge_date'
+
+    # top-level imputation rules that will apply to all aggregates functions
+    # can also specify categoricals_imputation or array_categoricals_imputation
+    aggregates_imputation:
+      all:
+        type: 'constant'
+        value: 0
+
+    # Aggregates of numerical columns. Each quantity is a number of some
+    # sort, and the list of metrics are applied to each quantity
+    aggregates:
+      -
+        quantity: 
+          prior: '*'
+        metrics:
+          - 'max'
+    # The time intervals over which to aggregate features
+    intervals:
+      - '5 years'

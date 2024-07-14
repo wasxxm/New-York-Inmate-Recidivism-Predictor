@@ -1,0 +1,3 @@
+label_config:
+  filepath: 'sql/labels/assignment_3_labels.sql'
+  name: 'labels'

@@ -1,0 +1,4 @@
+individual_importance:
+  methods: [] # empty list means don't calculate individual importances
+  # methods: ['uniform']
+  n_ranks: 5

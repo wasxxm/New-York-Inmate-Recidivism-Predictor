@@ -1,0 +1,24 @@
+temporal_config:
+  
+  feature_start_time: '2000-01-01' # earliest date included in features
+  feature_end_time: '2019-01-01'   # latest date included in features
+
+  #First date label data is good
+  label_start_time: '2010-01-01' # earliest date for which labels are available
+  label_end_time: '2019-01-01' # day AFTER last label date (all dates in any model are < this date)
+
+  #How often to update model?
+  model_update_frequency: '2year' # Monthly because that's how often they make mental health services plan
+
+  #Length of time defining a test set
+  test_durations: ['0day'] # length of time included in a test matrix (0 days will give a single prediction immediately after training end)
+  
+  #How far back a training set reaches?
+  max_training_histories: ['5year'] # length of time included in a train matrix
+
+  #How often do you sample for training/testing datasets?
+  training_as_of_date_frequencies: ['6month'] # time between as of dates for same entity in train matrix
+  test_as_of_date_frequencies: ['1month'] # time between as of dates for same entity in test matrix
+
+  training_label_timespans: ['6month']
+  test_label_timespans: ['6month']

@@ -1,0 +1,34 @@
+    # prefix given to the resultant tables
+    prefix: 'bkgs'
+    # from_obj is usually a source table but can be an expression, such as
+    # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
+    from_obj: |
+      (SELECT c.joid::INT AS entity_id,
+             i.booking_date AS knowledge_date,
+             age
+      FROM cleaned.jocojimsinmatedata i
+      JOIN raw.jocojococlient c
+          ON c.source = 'jocoJIMSNameIndex.MNI_NO_0'
+          AND c.sourceid::INT = i.mni_no::INT) AS bookings
+    knowledge_date_column: 'knowledge_date'
+
+    # top-level imputation rules that will apply to all aggregates functions
+    # can also specify categoricals_imputation or array_categoricals_imputation
+    aggregates_imputation:
+      all:
+        type: 'constant'
+        value: 0
+
+    # Aggregates of numerical columns. Each quantity is a number of some
+    # sort, and the list of metrics are applied to each quantity
+    aggregates:
+      -
+        quantity: 
+          prior: '*'
+        metrics:
+          - 'count'
+    # The time intervals over which to aggregate features
+    intervals:
+      - '1 year'
+      - '5 years'
+      - 'all'

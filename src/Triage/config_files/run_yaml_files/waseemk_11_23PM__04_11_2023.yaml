@@ -1,0 +1,160 @@
+# From: config_files/meta_data/baseline_header.yaml
+config_version: 'v8'
+
+model_comment: 'dev-config'
+random_seed: 23895478
+
+# From: config_files/temporal/medium_depth.yaml
+temporal_config:
+  
+  feature_start_time: '2000-01-01' # earliest date included in features
+  feature_end_time: '2019-01-01'   # latest date included in features
+
+  #First date label data is good
+  label_start_time: '2010-01-01' # earliest date for which labels are available
+  label_end_time: '2019-01-01' # day AFTER last label date (all dates in any model are < this date)
+
+  #How often to update model?
+  model_update_frequency: '2year' # Monthly because that's how often they make mental health services plan
+
+  #Length of time defining a test set
+  test_durations: ['0day'] # length of time included in a test matrix (0 days will give a single prediction immediately after training end)
+  
+  #How far back a training set reaches?
+  max_training_histories: ['5year'] # length of time included in a train matrix
+
+  #How often do you sample for training/testing datasets?
+  training_as_of_date_frequencies: ['6month'] # time between as of dates for same entity in train matrix
+  test_as_of_date_frequencies: ['1month'] # time between as of dates for same entity in test matrix
+
+  training_label_timespans: ['6month']
+  test_label_timespans: ['6month']
+
+# From: config_files/labels_cohorts/labels_V0.yaml
+label_config:
+  filepath: 'sql/labels/assignment_3_labels.sql'
+  name: 'labels'
+
+feature_aggregations:
+  -
+# From: config_files/features/bookings_V0.yaml
+    # prefix given to the resultant tables
+    prefix: 'bkgs'
+    # from_obj is usually a source table but can be an expression, such as
+    # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
+    from_obj: |
+      (SELECT c.joid::INT AS entity_id,
+             i.booking_date AS knowledge_date,
+             age
+      FROM cleaned.jocojimsinmatedata i
+      JOIN raw.jocojococlient c
+          ON c.source = 'jocoJIMSNameIndex.MNI_NO_0'
+          AND c.sourceid::INT = i.mni_no::INT) AS bookings
+    knowledge_date_column: 'knowledge_date'
+
+    # top-level imputation rules that will apply to all aggregates functions
+    # can also specify categoricals_imputation or array_categoricals_imputation
+    aggregates_imputation:
+      all:
+        type: 'constant'
+        value: 0
+
+    # Aggregates of numerical columns. Each quantity is a number of some
+    # sort, and the list of metrics are applied to each quantity
+    aggregates:
+      -
+        quantity: 
+          prior: '*'
+        metrics:
+          - 'count'
+    # The time intervals over which to aggregate features
+    intervals:
+      - '1 year'
+      - '5 years'
+      - 'all'
+
+# From: config_files/scoring/assignment_4_scoring.yaml
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@, recall@]
+          thresholds:
+              percentiles: [1, 2, 3, 4, 5, 6, 7, 8, 9, 
+                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
+                  30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 
+                  40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+                  50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+                  60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+                  70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+                  80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+                  90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+                  100]
+              top_n: [100, 200, 500, 1000]
+
+    training_metric_groups:
+        -
+          metrics: [precision@, recall@]
+          thresholds:
+              percentiles: [1, 2, 3, 4, 5, 6, 7, 8, 9, 
+                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
+                  30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 
+                  40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+                  50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+                  60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+                  70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+                  80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+                  90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+                  100]
+              top_n: [100, 200, 500, 1000]
+
+# From: config_files/importance/assignment_4_importances.yaml
+individual_importance:
+  methods: [] # empty list means don't calculate individual importances
+  # methods: ['uniform']
+  n_ranks: 5
+
+# From: config_files/model_grid/Assignment4_models.yaml
+grid_config:
+    'sklearn.ensemble.RandomForestClassifier':
+        n_estimators: [150]
+        max_depth: [50]
+        min_samples_split: [25]
+    
+    'sklearn.tree.DecisionTreeClassifier':
+        max_depth: [3]
+        max_features: [1,2,3,4,5]
+        min_samples_split: [25]
+      
+    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        C: [0.1]
+        penalty: ['l1']
+    
+
+    #MADI AND WASEEM - ADD YOUR BASELINE MODELS
+
+    # catwalk's BaselineRankMultiFeature baseline will score based on the ranking
+    # by one or more feature (note that the scores don't map to the percentiles as
+    # in PercentileRankOneFeature. This provides a slightly more complex baseline
+    # than above, but still realistic for what might be encountered in practice.
+    # The example below will create two ranker "models": one ranking by two features
+    # and the other just by a single feature. Note that the rules are lists of
+    # dictionaries.
+
+    # BASELINE 1
+    'triage.component.catwalk.baselines.rankers.BaselineRankMultiFeature':
+        rules:
+            #UPDATE WITH BASELINE FEATURES
+            - [{feature: 'feature_1', low_value_high_score: True}, {feature: 'feature_2', low_value_high_score: False}]
+            - [{feature: 'feature_3', low_value_high_score: True}]
+
+    # BASLINE 2
+    'triage.component.catwalk.baselines.rankers.BaselineRankMultiFeature':
+            rules:
+                #UPDATE WITH BASELINE FEATURES
+                - [{feature: 'feature_1', low_value_high_score: True}, {feature: 'feature_2', low_value_high_score: False}]
+                - [{feature: 'feature_3', low_value_high_score: True}]
+
+
+
